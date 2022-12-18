@@ -1,0 +1,10 @@
+(library
+ (name front)
+ (libraries batteries))
+
+(ocamllex lexer)
+
+(menhir
+ (infer false)
+ (flags --lalr --explain)
+ (modules parser))
