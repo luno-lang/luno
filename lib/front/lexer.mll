@@ -28,6 +28,7 @@ rule lex_token = parse
   | "["  {LBRACK}
   | "]"  {RBRACK}
   | ","  {COMMA}
+  | ":"  {COLON}
   | "="  {ASSIGN}
   | "==" {EQ}
   | "~=" {NOT_EQ}
@@ -51,7 +52,7 @@ rule lex_token = parse
   | whitespace {lex_token lexbuf}
   | eol {new_line lexbuf; lex_token lexbuf}
   | eof {EOF}
-  | _ { raise (SyntaxError ("Lexer: illegal character " ^ Lexing.lexeme lexbuf)) }
+  | _ { raise (SyntaxError ("lexer: illegal character " ^ Lexing.lexeme lexbuf)) }
 
 and lex_string buf = parse
   | '"' {STRING (Buffer.contents buf)}
@@ -63,7 +64,7 @@ and lex_string buf = parse
       lex_string buf lexbuf
     }
   (* Unterminated string *)
-  | eof { raise (SyntaxError ("Lexer: unterminated string literal")) }
+  | eof { raise (SyntaxError ("lexer: unterminated string literal")) }
 
 (* Note: Tsuki only supports single line comments *)
 and lex_comment = parse
