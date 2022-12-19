@@ -1,8 +1,12 @@
-open Front
-open Front.Ast_print
+open Batteries
+open Front.Lex_parse
 
-let dpos = Lexing.dummy_pos
+let compile path = 
+  let file = File.open_in path in
+  parse file
 
-let ast1 = Ast.BinOp (dpos, Ast.Int (dpos, 1), Ast.Op_Plus, Ast.Int (dpos, 2))
-let ast2 = Ast.BinOp (dpos, Ast.Int (dpos, 3), Ast.Op_Plus, ast1)
-let () = print_endline (print_expr create_printer ast2)
+let () = 
+  let result = compile "example/test.tsu" in
+  match result with
+  | Ok _ -> print_endline "ok"
+  | Error err -> print_endline ("error: " ^ err)

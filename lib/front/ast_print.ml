@@ -23,18 +23,17 @@ let create_printer : printer_state =
 (* TODO: fix indentation *)
 let rec expr_to_string (pp:printer_state) (exp:expr) =
   (* let indent = pp.pre ^ String.repeat space pp.indent ^ "\n"  *)
-  let indent = pp.pre ^ String.repeat space pp.indent ^ "\n" in
+  let _ = pp.pre ^ String.repeat space pp.indent ^ "\n" in
   match exp with
   | Int (_,i) -> string_of_int i
   | Float (_, f) -> string_of_float f
   | Str (_, s) -> "\"" ^ s ^ "\""
   | Ident (_, Var(id)) -> id
-  | BinOp (_, l, op, r) -> 
-      let lhs = "left: " ^ expr_to_string pp l ^ "\n"
-      and rhs = "right: " ^ expr_to_string pp r ^ "\n"
-      and op = "op: " ^ bin_op_to_string op ^ "\n"
-      in
-        indent ^ lhs ^ " " ^ op ^ " " ^ rhs
+  | BinOp (_, l, op, r) -> expr_to_string pp l ^ bin_op_to_string op ^ expr_to_string pp r
+  | Group (_,e) -> "(" ^ expr_to_string pp e ^ ")"
+
+  (* TODO: add support for printing lists *)
+  | List (_, _) -> ""
 
 and bin_op_to_string (bop:bin_op) =
   match bop with

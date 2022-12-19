@@ -5,6 +5,6 @@
 (ocamllex lexer)
 
 (menhir
- (infer false)
+ (infer true)
  (flags --lalr --explain)
  (modules parser))

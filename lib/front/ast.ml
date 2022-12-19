@@ -30,6 +30,7 @@ type bin_op =
 and ty =
   | TNum
   | TString
+  | TDefault
 
 and expr =
   | Int of loc * int
@@ -37,14 +38,19 @@ and expr =
   | Str of loc * string
   | Ident of loc * ident
   | BinOp of loc * expr * bin_op * expr
+  | Group of loc * expr
+
+  (* Lists *)
+  | List of loc * (expr list)
 
 and stmt =
   (* var x: int = 1 *)
-  | VarDecl of loc * ty * expr * expr
+  | VarDecl of loc * ty * string * expr
   (* x = 1 *)
-  | VarAssign of loc * expr * expr
+  | VarAssign of loc * string * expr
   (* if (cond) then block_stmt else block_stmt *)
   | If of loc * expr * block_stmt * block_stmt
+
 
 and block_stmt = Block of stmt list
 
