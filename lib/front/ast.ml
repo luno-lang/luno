@@ -1,11 +1,10 @@
 (**
- * The AST (pre type-checking)   
+  The AST (pre type-checking)   
  *)
 
 (* Position of the lexer *)
 type loc = Lexing.position
-
-type ident = Var of string
+type ident = string
 
 (* Binary operators *)
 type bin_op =
@@ -41,17 +40,17 @@ and expr =
   | Group of loc * expr
 
   (* Lists *)
-  | List of loc * (expr list)
+  | List of loc * expr list
 
 and stmt =
-  (* var x: int = 1 *)
-  | VarDecl of loc * ty * string * expr
-  (* x = 1 *)
-  | VarAssign of loc * string * expr
-  (* if (cond) then block_stmt else block_stmt *)
-  | If of loc * expr * block_stmt * block_stmt
+  | VarDecl of loc * ty * ident * expr   (* var x: int = 1 *)
+  | VarAssign of loc * ident * expr      (* x = 1 *)
+  | If of loc * expr * stmt * stmt       (* if cond then block else block end *)
+  | ForOf of loc * ident * expr * stmt   (* for x of items .. end *)
+  | While of loc * expr * stmt           (* while cond .. end *)
 
+and top_level =
+  | FuncDefn of loc * ident * stmt list
+  | Block of stmt list
 
-and block_stmt = Block of stmt list
-
-and program = Program of stmt list
+and program = Program of top_level

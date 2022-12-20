@@ -4,7 +4,7 @@ open Ast
 
 %token PLUS MINUS STAR SLASH LPAREN RPAREN
 %token LBRACK RBRACK COMMA COLON ASSIGN EQ NOT_EQ LT GT LT_EQ GT_EQ
-%token FN IF ELSE FOR WHILE THEN VAR END
+%token FN IF ELSE FOR OF WHILE THEN VAR END
 %token EOF
 
 %token<int> INT
@@ -13,57 +13,39 @@ open Ast
 
 %type<Ast.expr> expr
 %type<Ast.stmt> stmt
-%type<Ast.stmt> main
+%type<Ast.top_level> top_level
+%type<Ast.program> program
 
 (* Operator precedence (low to high) *)
 %left PLUS MINUS
 %left STAR SLASH
 %left EQ NOT_EQ
 %left LT GT LT_EQ GT_EQ
+%left LPAREN RPAREN
 
-%start main
+%start program
 
 %%
 
-expr_l1:
-  | expr STAR  expr {BinOp ($startpos, $1, Op_Star, $3)}
-  | expr SLASH expr {BinOp ($startpos, $1, Op_Slash, $3)}
-  | e = expr_l2 {e}
+bin_expr:
+  | LPAREN e=expr RPAREN {Group ($startpos, e)}
+  | e1=expr op=bin_op e2=expr {BinOp ($startpos, e1, op, e2)}
 
-expr_l2:
-  | expr PLUS  expr {BinOp ($startpos, $1, Op_Plus, $3)}
-  | expr MINUS expr {BinOp ($startpos, $1, Op_Minus, $3)}
-  | e = expr_l3 {e}
-
-expr_l3:
-  | expr LT    expr {BinOp ($startpos, $1, Op_Lt, $3)}
-  | expr GT    expr {BinOp ($startpos, $1, Op_Gt, $3)}
-  | expr LT_EQ expr {BinOp ($startpos, $1, Op_LtEq, $3)}
-  | expr GT_EQ expr {BinOp ($startpos, $1, Op_GtEq, $3)}
-
-expr_l4:
-  | expr EQ     expr {BinOp ($startpos, $1, Op_Eq, $3)}
-  | expr NOT_EQ expr {BinOp ($startpos, $1, Op_NotEq, $3)} 
-  | e = expr_l5 {e}
-
-(* Highest precedence level for an expression *)
-expr_l5:
-  (* ( ) have the highest precedence *)
-  | LPAREN expr RPAREN {Group ($startpos, $2)}
-
+(* An expression can be a literal, list or function call *)
 expr:
-  | INT {Int ($startpos, $1)}
-  | STRING {Str ($startpos, $1)}
-  | IDENT  {Ident ($startpos, (Var $1))}
-  | lis = list {List ($startpos, lis)}
-  | e = expr_l1 {e}
+  | value=INT {Int ($startpos, value)}
+  | value=STRING {Str ($startpos, value)}
+  | value=IDENT {Ident ($startpos, value)}
+  | value=list_value {List ($startpos, value)}
+  | value=bin_expr {value}
 
 (* Lists *)
 list_item:
-  | e = expr {e}
-list:
-  | LBRACK; list_of = separated_list(COMMA, list_item); RBRACK {list_of}
-  
+  | item=expr {item}
+list_value:
+  | LBRACK items=separated_list(COMMA, list_item) RBRACK 
+    {items}
+
 (**
   This defines all the allowed statements in Tsuki. A valid statement can be one of:
   - a variable declaration
@@ -73,9 +55,36 @@ list:
   - a function
 *)
 stmt:
-  | VAR IDENT ASSIGN expr {VarDecl ($startpos, TDefault, $2, $4)}
-  | IDENT ASSIGN expr {VarAssign ($startpos, $1, $3)}
+  | VAR name=IDENT ASSIGN value=expr 
+    {VarDecl ($startpos, TDefault, name, value)}
+  | name=IDENT ASSIGN value=expr 
+    {VarAssign ($startpos, name, value)}
+  | IF cond=expr THEN then_b=stmt ELSE else_b=stmt END
+    {If ($startpos, cond, then_b, else_b)}
+  | FOR name=IDENT OF list=expr for_b=stmt END
+    {ForOf ($startpos, name, list, for_b)}
+  | WHILE cond=expr while_b=stmt END
+    {While ($startpos, cond, while_b)}
 
-(* Main entry point *)
-main:
-  stmt; EOF { $1 }
+(* Top level statements *)
+block:
+  | b=list(stmt) {b}
+
+top_level:
+  | b=block {Block b}
+  | FN name=IDENT fn_b=block END {FuncDefn ($startpos, name, fn_b)}
+
+program:
+  | tl=top_level; EOF { Program tl }
+
+%inline bin_op:
+  | PLUS { Op_Plus }
+  | MINUS { Op_Minus }
+  | STAR { Op_Star }
+  | SLASH { Op_Slash }
+  | EQ { Op_Eq }
+  | NOT_EQ { Op_NotEq }
+  | LT { Op_Lt }
+  | GT { Op_Gt }
+  | LT_EQ { Op_LtEq }
+  | GT_EQ { Op_GtEq }

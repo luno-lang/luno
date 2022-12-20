@@ -1,5 +1,5 @@
 (**
- * Lexer for Tsuki
+  Lexer for Tsuki
  *)
 
 {
@@ -37,12 +37,13 @@ rule lex_token = parse
   | "<=" {LT_EQ}
   | ">=" {GT_EQ}
   | '"'  {lex_string (Buffer.create 16) lexbuf}
-  | "--" {lex_comment lexbuf}
+  | "#" {lex_comment lexbuf}
   
   | "fn" {FN}
   | "if" {IF}
   | "else" {ELSE}
   | "for" {FOR}
+  | "of" {OF}
   | "while" {WHILE}
   | "then" {THEN}
   | "var" {VAR}

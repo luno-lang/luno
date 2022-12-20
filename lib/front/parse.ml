@@ -8,7 +8,7 @@ let print_err_pos lexbuf =
   Printf.sprintf "%d:%d" pos.pos_lnum (pos.pos_cnum - pos.pos_bol + 1)
 
 let parse_program lexbuf =
-  try Ok (Parser.main Lexer.lex_token lexbuf) with
+  try Ok (Parser.program Lexer.lex_token lexbuf) with
   | SyntaxError msg ->
     let error_msg = Printf.sprintf "%s: %s" (print_err_pos lexbuf) msg in
     Error error_msg

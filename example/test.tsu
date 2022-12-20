@@ -1,1 +1,5 @@
-var x = [1,2,3
+if x then
+    var y = 5
+else
+    var z = 6
+end
