@@ -2,16 +2,49 @@
 open Ast
 %}
 
-%token PLUS MINUS STAR SLASH LPAREN RPAREN
-%token LBRACK RBRACK COMMA COLON ASSIGN EQ NOT_EQ LT GT LT_EQ GT_EQ
-%token FN IF ELSE FOR OF WHILE THEN VAR END
+%token PLUS
+%token MINUS
+%token STAR
+%token SLASH
+%token LPAREN
+%token RPAREN
+%token LBRACK
+%token RBRACK
+%token COMMA
+%token COLON
+%token ASSIGN
+%token EQ
+%token NOT_EQ
+%token LT
+%token GT
+%token LT_EQ
+%token GT_EQ
+%token ARROW
+%token IMPORT
+%token FOREIGN
+%token FN 
+%token IF
+%token ELSE
+%token FOR
+%token OF
+%token WHILE
+%token THEN
+%token VAR
+%token END
+
+(* Types *)
+%token INT_TY
+%token STR_TY
+
 %token EOF
 
 %token<int> INT
 %token<string> STRING
 %token<string> IDENT
 
+%type<Ast.ty> ty
 %type<Ast.expr> expr
+%type<Ast.literal> literal
 %type<Ast.stmt> stmt
 %type<Ast.top_level> top_level
 %type<Ast.program> program
@@ -26,56 +59,55 @@ open Ast
 %start program
 
 %%
+(* Type information *)
+ty:
+  | INT_TY { TInt }
+  | STR_TY { TString }
 
-bin_expr:
-  | LPAREN e=expr RPAREN {Group ($startpos, e)}
-  | e1=expr op=bin_op e2=expr {BinOp ($startpos, e1, op, e2)}
-
-(* An expression can be a literal, list or function call *)
+literal:
+  | INT { AInt $1 }
+  | STRING { AStr $1 }
 expr:
-  | value=INT {Int ($startpos, value)}
-  | value=STRING {Str ($startpos, value)}
-  | value=IDENT {Ident ($startpos, value)}
-  | value=list_value {List ($startpos, value)}
-  | value=bin_expr {value}
+  | exp=literal { Lit exp }
+  | exp=IDENT { Ident exp }
+  | exp=list_expr { List exp } 
 
-(* Lists *)
+  | LPAREN exp=expr RPAREN { Group exp }
+  | e1=expr op=bin_op e2=expr { BinOp (e1, op, e2) }
+
 list_item:
   | item=expr {item}
-list_value:
-  | LBRACK items=separated_list(COMMA, list_item) RBRACK 
-    {items}
+list_expr:
+  | LBRACK items=separated_list(COMMA, list_item) RBRACK
+  { items }
 
-(**
-  This defines all the allowed statements in Tsuki. A valid statement can be one of:
-  - a variable declaration
-  - a variable reassignment
-  - an if statement
-  - a for loop
-  - a function
-*)
 stmt:
-  | VAR name=IDENT ASSIGN value=expr 
-    {VarDecl ($startpos, TDefault, name, value)}
-  | name=IDENT ASSIGN value=expr 
-    {VarAssign ($startpos, name, value)}
-  | IF cond=expr THEN then_b=stmt ELSE else_b=stmt END
-    {If ($startpos, cond, then_b, else_b)}
-  | FOR name=IDENT OF list=expr for_b=stmt END
-    {ForOf ($startpos, name, list, for_b)}
-  | WHILE cond=expr while_b=stmt END
-    {While ($startpos, cond, while_b)}
+  | VAR name=IDENT ASSIGN value=expr
+  { VarDecl (TDefault, name, value) }
+  | name=IDENT ASSIGN value=expr
+  { VarAssign (name, value) }
+  (* TODO: make else_b optional *)
+  | IF cond=expr THEN then_b=block ELSE else_b=block END
+  { If (cond, then_b, else_b) }
+  | FOR name=IDENT OF exp=expr THEN for_b=block END
+  { For (name, exp, for_b) }
+  | WHILE cond=expr THEN while_b=block END
+  { While (cond, while_b) }
+
+block:
+  | list(stmt) { $1 }
+
+func_definition:
+  | FN name=IDENT LPAREN RPAREN body=block END
+  { FuncDefn (name, body) }
 
 (* Top level statements *)
-block:
-  | b=list(stmt) {b}
-
 top_level:
   | b=block {Block b}
-  | FN name=IDENT fn_b=block END {FuncDefn ($startpos, name, fn_b)}
+  | b=func_definition {b}
 
 program:
-  | tl=top_level; EOF { Program tl }
+  | tl=top_level EOF { Program tl }
 
 %inline bin_op:
   | PLUS { Op_Plus }

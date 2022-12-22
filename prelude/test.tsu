@@ -1,0 +1,13 @@
+# `Test`: A useless module to test out the functionality of Tsuki during its
+# development. Will be removed from Prelude very shortly.
+#module Test
+
+fn test()
+  var sixty_nine = 69
+  var greeting = "hello there"
+
+  var hello_world = "hello" + " world"
+end
+
+# fn a()
+# end

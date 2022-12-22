@@ -36,9 +36,12 @@ rule lex_token = parse
   | ">"  {GT}
   | "<=" {LT_EQ}
   | ">=" {GT_EQ}
+  | "->" {ARROW}
   | '"'  {lex_string (Buffer.create 16) lexbuf}
   | "#" {lex_comment lexbuf}
   
+  | "import" {IMPORT}
+  | "foreign" {FOREIGN}
   | "fn" {FN}
   | "if" {IF}
   | "else" {ELSE}
@@ -48,6 +51,8 @@ rule lex_token = parse
   | "then" {THEN}
   | "var" {VAR}
   | "end" {END}
+  | "int" {INT_TY}
+  | "str" {STR_TY}
   | int as i {INT (int_of_string i)}
   | ident as s {IDENT s}
   | whitespace {lex_token lexbuf}

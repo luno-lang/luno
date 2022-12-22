@@ -1,5 +1,0 @@
-if x then
-    var y = 5
-else
-    var z = 6
-end
