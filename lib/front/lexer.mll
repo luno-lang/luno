@@ -1,13 +1,38 @@
-(**
-  Lexer for Tsuki
- *)
-
 {
 open Batteries
 open Lexing
 open Parser
+open Token
 
 exception SyntaxError of string
+
+let kw_table : (string, token) Hashtbl.t = Hashtbl.create 20
+let reserved_kw_table : (string, token) Hashtbl.t = Hashtbl.create 20
+
+let _ = 
+  List.iter (fun (kw, ty) -> Hashtbl.add kw_table kw ty)
+    [ ("import", IMPORT);
+      ("foreign", FOREIGN);
+      ("fn", FN);
+      ("if", IF);
+      ("else", ELSE);
+      ("for", FOR);
+      ("of", OF);
+      ("while", WHILE);
+      ("then", THEN);
+      ("var", VAR);
+      ("const", CONST);
+      ("end", END);
+      
+      (* Types *)
+      ("bool", BOOL);
+      ("int", INT);
+      ("float", FLOAT);
+      ("string", STRING); ]
+
+let _ = 
+  List.iter (fun (kw, ty) -> Hashtbl.add reserved_kw_table kw ty)
+    [ ]
 }
 
 let digit = ['0'-'9']
@@ -40,28 +65,23 @@ rule lex_token = parse
   | '"'  {lex_string (Buffer.create 16) lexbuf}
   | "#" {lex_comment lexbuf}
   
-  | "import" {IMPORT}
-  | "foreign" {FOREIGN}
-  | "fn" {FN}
-  | "if" {IF}
-  | "else" {ELSE}
-  | "for" {FOR}
-  | "of" {OF}
-  | "while" {WHILE}
-  | "then" {THEN}
-  | "var" {VAR}
-  | "end" {END}
-  | "int" {INT_TY}
-  | "str" {STR_TY}
-  | int as i {INT (int_of_string i)}
-  | ident as s {IDENT s}
+  | ident as s
+  {
+    match Hashtbl.find_option kw_table s with
+    | Some kw -> kw
+    | None -> 
+      if Hashtbl.mem reserved_kw_table s
+      then failwith "lexer: reserved keyword"
+      else IDENT s
+  }
+  | int as i {LIT_INT (int_of_string i)}
   | whitespace {lex_token lexbuf}
   | eol {new_line lexbuf; lex_token lexbuf}
   | eof {EOF}
   | _ { raise (SyntaxError ("lexer: illegal character " ^ Lexing.lexeme lexbuf)) }
 
 and lex_string buf = parse
-  | '"' {STRING (Buffer.contents buf)}
+  | '"' {LIT_STRING (Buffer.contents buf)}
   | '\\' '\n' {Buffer.add_char buf '\n'; lex_string buf lexbuf}
   (* Escapes *)
   | [^ '"' '\\']+

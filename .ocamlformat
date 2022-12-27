@@ -1,3 +1,4 @@
 profile = default
 version = 0.24.1
 type-decl = sparse
+break-cases = toplevel

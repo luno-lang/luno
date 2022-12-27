@@ -1,4 +1,5 @@
 %{
+open Token
 open Ast
 %}
 
@@ -10,6 +11,7 @@ open Ast
 %token RPAREN
 %token LBRACK
 %token RBRACK
+%token DOT
 %token COMMA
 %token COLON
 %token ASSIGN
@@ -20,6 +22,8 @@ open Ast
 %token LT_EQ
 %token GT_EQ
 %token ARROW
+
+(* Keywords *)
 %token IMPORT
 %token FOREIGN
 %token FN 
@@ -30,16 +34,20 @@ open Ast
 %token WHILE
 %token THEN
 %token VAR
+%token CONST
 %token END
-
-(* Types *)
-%token INT_TY
-%token STR_TY
-
 %token EOF
 
-%token<int> INT
-%token<string> STRING
+(* Types *)
+%token BOOL
+%token INT
+%token FLOAT
+%token STRING
+
+%token<bool> LIT_BOOL
+%token<int> LIT_INT
+%token<float> LIT_FLOAT
+%token<string> LIT_STRING
 %token<string> IDENT
 
 %type<Ast.ty> ty
@@ -61,18 +69,16 @@ open Ast
 %%
 (* Type information *)
 ty:
-  | INT_TY { TInt }
-  | STR_TY { TString }
+  | INT { TInt }
+  | STRING { TString }
 
 literal:
-  | INT { AInt $1 }
-  | STRING { AStr $1 }
+  | LIT_INT { AInt $1 }
+  | LIT_STRING { AStr $1 }
 expr:
   | exp=literal { Lit exp }
   | exp=IDENT { Ident exp }
   | exp=list_expr { List exp } 
-
-  | LPAREN exp=expr RPAREN { Group exp }
   | e1=expr op=bin_op e2=expr { BinOp (e1, op, e2) }
 
 list_item:
@@ -83,7 +89,7 @@ list_expr:
 
 stmt:
   | VAR name=IDENT ASSIGN value=expr
-  { VarDecl (TDefault, name, value) }
+  { VarDecl (TUntyped, name, value) }
   | name=IDENT ASSIGN value=expr
   { VarAssign (name, value) }
   (* TODO: make else_b optional *)
@@ -103,11 +109,10 @@ func_definition:
 
 (* Top level statements *)
 top_level:
-  | b=block {Block b}
-  | b=func_definition {b}
+  | func_definition { $1 }
 
 program:
-  | tl=top_level EOF { Program tl }
+  | list(top_level) EOF { Program $1 }
 
 %inline bin_op:
   | PLUS { Op_Plus }

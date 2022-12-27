@@ -1,8 +1,3 @@
-(**
-  The untyped AST (pre type-checking)   
- *)
-
-(* Position of the lexer *)
 type loc = Lexing.position
 
 (* Binary operators *)
@@ -29,8 +24,11 @@ type ty =
   | TInt
   | TFloat
   | TString
-  | TIdent
-  | TDefault
+  | TBool
+  | TAny
+  (* Untyped is different from Any, since it implies that
+     we have not actually inferred the type yet *)
+  | TUntyped
 
 type literal =
   | AInt of int
@@ -42,7 +40,6 @@ type expr =
   | Ident of string
   | Lambda of (string list * expr)
   | BinOp of expr * bin_op * expr
-  | Group of expr
   (* Lists *)
   | List of expr list
 
@@ -57,7 +54,7 @@ type top_level =
   | FuncDefn of string * stmt list
   | Block of stmt list
 
-type program = Program of top_level
+type program = Program of top_level list
 
 (* Pretty printing functions *)
 module Pretty = struct
@@ -78,9 +75,6 @@ module Pretty = struct
         ^ "\n"
         ^ string_of_expr "right:" (indent + 2) r
         ^ "\n"
-    | Group v ->
-        indent_string prefix indent "group\n"
-        ^ string_of_expr "value:" (indent + 2) v
     | List xs ->
         indent_string prefix indent "list\n"
         ^ String.concat "\n"
@@ -116,7 +110,8 @@ module Pretty = struct
         ^ String.concat "\n"
             (List.map (fun a -> string_of_stmt "" (indent + 2) a) stmts)
 
-  and string_of_program (Program tl) = string_of_top_level "" 0 tl
+  and string_of_program (Program tl) =
+    String.concat "\n" (List.map (fun a -> string_of_top_level "" 0 a) tl)
 
   and string_of_op (bop : bin_op) =
     match bop with

@@ -6,5 +6,5 @@
 
 (menhir
  (infer true)
- (flags --lalr --explain)
+ (flags --lalr --explain --external-tokens Token)
  (modules parser))
