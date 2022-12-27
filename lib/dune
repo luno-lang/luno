@@ -1,6 +1,6 @@
 (library
  (name tsuki)
- (libraries front comp batteries))
+ (libraries fe be batteries))
 
 (env
  (dev

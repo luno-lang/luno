@@ -1,4 +1,4 @@
 (executable
  (public_name tsuki)
  (name main)
- (libraries tsuki front))
+ (libraries tsuki fe be pass))

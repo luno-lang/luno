@@ -1,5 +1,5 @@
 (library
- (name front)
+ (name fe)
  (libraries batteries))
 
 (ocamllex lexer)

@@ -1,7 +1,6 @@
 {
 open Batteries
 open Lexing
-open Parser
 open Token
 
 exception SyntaxError of string
@@ -25,6 +24,7 @@ let _ =
       ("end", END);
       
       (* Types *)
+      ("any", ANY);
       ("bool", BOOL);
       ("int", INT);
       ("float", FLOAT);
@@ -56,7 +56,7 @@ rule lex_token = parse
   | ":"  {COLON}
   | "="  {ASSIGN}
   | "==" {EQ}
-  | "~=" {NOT_EQ}
+  (* | "~=" {NOT_EQ} *)
   | "<"  {LT}
   | ">"  {GT}
   | "<=" {LT_EQ}

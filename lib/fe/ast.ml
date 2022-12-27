@@ -26,33 +26,35 @@ type ty =
   | TString
   | TBool
   | TAny
-  (* Untyped is different from Any, since it implies that
-     we have not actually inferred the type yet *)
-  | TUntyped
+  | TNeedsInfer
 
 type literal =
-  | AInt of int
-  | AFloat of float
-  | AStr of string
+  | LitInt of int
+  | LitFloat of float
+  | LitStr of string
 
 type expr =
   | Lit of literal
   | Ident of string
-  | Lambda of (string list * expr)
+  | FuncCall of string * expr list
   | BinOp of expr * bin_op * expr
   (* Lists *)
   | List of expr list
 
 type stmt =
+  | ShortVarDecl of string * expr (* x := 1 *)
   | VarDecl of ty * string * expr (* var x: int = 1 *)
   | VarAssign of string * expr (* x = 1 *)
-  | If of expr * stmt list * stmt list (* if cond then block else block end *)
-  | For of string * expr * stmt list (* for x of items .. end *)
-  | While of expr * stmt list (* while cond .. end *)
+  | If of expr * block * block (* if cond then block else block end *)
+  | For of string * expr * block (* for x of items .. end *)
+  | While of expr * block (* while cond .. end *)
+  | FuncCall of expr
+
+and block = Block of stmt list
 
 type top_level =
-  | FuncDefn of string * stmt list
-  | Block of stmt list
+  | FuncDefn of string * (string * ty) list * block
+  | Stmt of stmt
 
 type program = Program of top_level list
 
@@ -61,14 +63,14 @@ module Pretty = struct
   let indent_string prefix n str = String.make n ' ' ^ prefix ^ str
 
   let string_of_literal = function
-    | AInt d -> string_of_int d
-    | AFloat f -> string_of_float f
-    | AStr s -> "\"" ^ s ^ "\""
+    | LitInt d -> string_of_int d
+    | LitFloat f -> string_of_float f
+    | LitStr s -> "\"" ^ s ^ "\""
 
   let rec string_of_expr (prefix : string) (indent : int) expr =
     match expr with
     | Lit lit -> indent_string prefix indent (string_of_literal lit)
-    | Ident v -> indent_string prefix indent v
+    | Ident name -> indent_string prefix indent name
     | BinOp (l, op, r) ->
         indent_string prefix indent ("operator " ^ string_of_op op ^ "\n")
         ^ string_of_expr "left:" (indent + 2) l
@@ -99,16 +101,17 @@ module Pretty = struct
 
   and string_of_top_level (prefix : string) (indent : int) tl =
     match tl with
-    | FuncDefn (name, stmts) ->
+    | FuncDefn (name, params, block) ->
         indent_string prefix indent "func_defn\n"
         ^ indent_string "name:" (indent + 2) name
         ^ "\n"
+        ^ string_of_block (indent + 2) block
+
+  and string_of_block (indent : int) = function
+    | Block bl ->
+        indent_string "" indent "block\n"
         ^ String.concat "\n"
-            (List.map (fun a -> string_of_stmt "" (indent + 2) a) stmts)
-    | Block stmts ->
-        indent_string prefix indent "block\n"
-        ^ String.concat "\n"
-            (List.map (fun a -> string_of_stmt "" (indent + 2) a) stmts)
+            (List.map (fun a -> string_of_stmt "" (indent + 2) a) bl)
 
   and string_of_program (Program tl) =
     String.concat "\n" (List.map (fun a -> string_of_top_level "" 0 a) tl)

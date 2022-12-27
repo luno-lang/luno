@@ -32,6 +32,7 @@ type token =
   | CONST
   | END
   (* Types *)
+  | ANY
   | BOOL
   | INT
   | FLOAT
@@ -78,6 +79,7 @@ let rec string_of_tok t =
   | VAR -> "var"
   | CONST -> "const"
   | END -> "end"
+  | ANY -> "any"
   | BOOL -> "bool"
   | INT -> "int"
   | FLOAT -> "float"

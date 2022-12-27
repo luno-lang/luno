@@ -1,0 +1,3 @@
+(library
+ (name be)
+ (libraries fe batteries))

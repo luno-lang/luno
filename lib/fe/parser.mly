@@ -1,5 +1,4 @@
 %{
-open Token
 open Ast
 %}
 
@@ -39,6 +38,7 @@ open Ast
 %token EOF
 
 (* Types *)
+%token ANY
 %token BOOL
 %token INT
 %token FLOAT
@@ -69,47 +69,62 @@ open Ast
 %%
 (* Type information *)
 ty:
+  | ANY { TAny }
   | INT { TInt }
   | STRING { TString }
 
 literal:
-  | LIT_INT { AInt $1 }
-  | LIT_STRING { AStr $1 }
+  | LIT_INT { LitInt $1 }
+  | LIT_STRING { LitStr $1 }
 expr:
-  | exp=literal { Lit exp }
-  | exp=IDENT { Ident exp }
-  | exp=list_expr { List exp } 
-  | e1=expr op=bin_op e2=expr { BinOp (e1, op, e2) }
+  | literal { Lit $1 }
+  | func_call { $1 }
+  | IDENT { Ident $1 }
+  | LBRACK items=separated_list(COMMA, list_item) RBRACK { List items } 
+  | expr op=bin_op expr { BinOp ($1, op, $3) }
+func_call:
+  | IDENT LPAREN params=separated_list(COMMA, list_item) RPAREN
+    { FuncCall ($1, params) }
 
 list_item:
   | item=expr {item}
-list_expr:
-  | LBRACK items=separated_list(COMMA, list_item) RBRACK
-  { items }
 
 stmt:
-  | VAR name=IDENT ASSIGN value=expr
-  { VarDecl (TUntyped, name, value) }
+  | name=IDENT COLON ASSIGN value=expr
+    { ShortVarDecl (name, value) }
+  | VAR name=IDENT COLON typ=ty ASSIGN value=expr
+    { VarDecl (typ, name, value) }
   | name=IDENT ASSIGN value=expr
-  { VarAssign (name, value) }
+    { VarAssign (name, value) }
   (* TODO: make else_b optional *)
   | IF cond=expr THEN then_b=block ELSE else_b=block END
-  { If (cond, then_b, else_b) }
+    { If (cond, then_b, else_b) }
   | FOR name=IDENT OF exp=expr THEN for_b=block END
-  { For (name, exp, for_b) }
+    { For (name, exp, for_b) }
   | WHILE cond=expr THEN while_b=block END
-  { While (cond, while_b) }
+    { While (cond, while_b) }
+  | func_call
+    { FuncCall $1 }
 
 block:
-  | list(stmt) { $1 }
+  | list(stmt) { Block $1 }
+
+func_type_param:
+  | name=IDENT COLON typ=ty
+  { (name, typ) }
+
+func_type_param_list:
+  | LPAREN params=separated_list(COMMA, func_type_param) RPAREN
+  { params }
 
 func_definition:
   | FN name=IDENT LPAREN RPAREN body=block END
-  { FuncDefn (name, body) }
+    { FuncDefn (name, [], body) }
 
 (* Top level statements *)
 top_level:
   | func_definition { $1 }
+  | stmt { Stmt $1 }
 
 program:
   | list(top_level) EOF { Program $1 }

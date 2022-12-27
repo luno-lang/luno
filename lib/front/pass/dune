@@ -1,3 +1,0 @@
-(library
- (name pass)
- (libraries front batteries))
