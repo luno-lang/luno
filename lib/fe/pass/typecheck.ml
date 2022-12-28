@@ -11,7 +11,14 @@ exception NotInScope of string
 exception TypeMismatch of string * ty * ty
 
 (* Context we perform type checking inside *)
-type context = (string, ty) Hashtbl.t
+type context = {
+  var_table : (string, ty) Hashtbl.t;
+  func_table : (string, ty list) Hashtbl.t;
+}
+
+(* Create and return a empty context *)
+let new_context =
+  { var_table = Hashtbl.create 20; func_table = Hashtbl.create 20 }
 
 let type_err why (t1 : ty) = raise (TypeError (why, t1))
 let mismatch why (t1 : ty) (t2 : ty) = raise (TypeMismatch (why, t1, t2))
@@ -37,7 +44,7 @@ let check_lit_type _ (lit : literal) (t : ty) =
   | _ -> ()
 
 let lookup_var ctx name =
-  match Hashtbl.find_option ctx name with
+  match Hashtbl.find_option ctx.var_table name with
   | Some ty -> ty
   | None -> raise (NotInScope name)
 
@@ -55,20 +62,20 @@ and check_stmt ctx (stmt : stmt) =
   | VarAssign (name, exp) ->
       let t1 = infer ctx exp in
       let t2 = lookup_var ctx name in
-      if are_types_compatible t1 t2 then Hashtbl.replace ctx name t1
+      if are_types_compatible t1 t2 then Hashtbl.replace ctx.var_table name t1
       else
         mismatch (Printf.sprintf "Mismatched re-assignment between types") t1 t2
   | ShortVarDecl (name, exp) ->
       (* Type inference *)
       let exp_ty = infer ctx exp in
-      Hashtbl.add ctx name exp_ty
-  | VarDecl (ty, name, exp) -> Hashtbl.add ctx name ty
+      Hashtbl.add ctx.var_table name exp_ty
+  | VarDecl (ty, name, exp) -> Hashtbl.add ctx.var_table name ty
   | If (cond, _, _) ->
       let cond_ty = infer ctx cond in
-      if cond_ty == TBool then ()
+      if cond_ty == TBool || cond_ty == TAny then ()
       else type_err "Expected a boolean condition" cond_ty
   | For (name, exp, _) ->
-      Hashtbl.add ctx name TString;
+      Hashtbl.add ctx.var_table name TString;
       let name_ty = lookup_var ctx name in
       let exp_ty = infer ctx exp in
       if name_ty == TString then () else type_err "Expected a name" exp_ty
@@ -84,6 +91,7 @@ and check_block ctx (Block stmts : block) =
 
 and check_top_level ctx (tl : top_level) =
   match tl with
+  | Import _ -> ()
   | FuncDefn (_, params, block) -> check_block ctx block
   | Stmt stmt -> check_stmt ctx stmt
 
@@ -93,6 +101,7 @@ and infer ctx (exp : expr) =
   match exp with
   | Lit lit -> (
       match lit with
+      | LitBool _ -> TBool
       | LitInt _ -> TInt
       | LitFloat _ -> TFloat
       | LitStr _ -> TString)
@@ -101,14 +110,18 @@ and infer ctx (exp : expr) =
       let t1 = infer ctx e1 in
       let t2 = infer ctx e2 in
       match (t1, op, t2) with
-      | TInt, (Op_Plus | Op_Minus | Op_Star | Op_Slash), TInt -> TInt
-      | TString, Op_Plus, TString -> TString
-      | TInt, (Op_Eq | Op_NotEq | Op_Lt | Op_Gt | Op_LtEq | Op_GtEq), TInt ->
-          TBool
+      | TInt, (OPlus | OMinus | OStar | OSlash), TInt -> TInt
+      | TString, OPlus, TString -> TString
+      | TInt, (OEq | ONe | OLt | OGt | OLtEq | OGtEq), TInt -> TBool
+      | TAny, (OEq | ONe | OLt | OGt | OLtEq | OGtEq), TBool -> TBool
+      | TBool, (OEq | ONe | OLt | OGt | OLtEq | OGtEq), TBool -> TBool
       | _ ->
           type_err
-            "Unable to synthesize type for this binop, maybe it is not \
-             implemented yet?"
+            (Printf.sprintf
+               "Unable to infer type for this binop, maybe it is not \
+                implemented yet?\n\
+                While trying to infer types for: %s and %s" (string_of_type t1)
+               (string_of_type t2))
             t1)
   (* TODO: add lists *)
   | List xs -> TAny

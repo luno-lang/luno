@@ -1,4 +1,4 @@
 (executable
- (public_name tsuki)
+ (public_name luno)
  (name main)
- (libraries tsuki fe be pass))
+ (libraries luno fe be pass))

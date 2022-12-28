@@ -6,9 +6,9 @@ maintainer: ["Abigail"]
 authors: ["Abigail"]
 license: "MIT"
 tags: ["programming language"]
-homepage: "https://github.com/megabytesofrem/tsuki"
+homepage: "https://github.com/megabytesofrem/luno"
 doc: "https://url/to/documentation"
-bug-reports: "https://github.com/megabytesofrem/tsuki/issues"
+bug-reports: "https://github.com/megabytesofrem/luno/issues"
 depends: [
   "ocaml"
   "dune" {>= "3.6"}
@@ -28,4 +28,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "git+https://github.com/megabytesofrem/tsuki.git"
+dev-repo: "git+https://github.com/megabytesofrem/luno.git"

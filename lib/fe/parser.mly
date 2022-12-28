@@ -36,6 +36,8 @@ open Ast
 %token CONST
 %token END
 %token EOF
+%token TRUE
+%token FALSE
 
 (* Types *)
 %token ANY
@@ -71,11 +73,13 @@ open Ast
 ty:
   | ANY { TAny }
   | INT { TInt }
+  | BOOL { TBool }
   | STRING { TString }
 
 literal:
   | LIT_INT { LitInt $1 }
   | LIT_STRING { LitStr $1 }
+  | LIT_BOOL { LitBool $1 }
 expr:
   | literal { Lit $1 }
   | func_call { $1 }
@@ -97,7 +101,7 @@ stmt:
   | name=IDENT ASSIGN value=expr
     { VarAssign (name, value) }
   (* TODO: make else_b optional *)
-  | IF cond=expr THEN then_b=block ELSE else_b=block END
+  | IF cond=expr THEN then_b=block ELSE? else_b=block? END
     { If (cond, then_b, else_b) }
   | FOR name=IDENT OF exp=expr THEN for_b=block END
     { For (name, exp, for_b) }
@@ -114,15 +118,25 @@ func_type_param:
   { (name, typ) }
 
 func_type_param_list:
-  | LPAREN params=separated_list(COMMA, func_type_param) RPAREN
+  | params=separated_list(COMMA, func_type_param)
   { params }
 
 func_definition:
-  | FN name=IDENT LPAREN RPAREN body=block END
-    { FuncDefn (name, [], body) }
+  | FN name=IDENT LPAREN params=func_type_param_list RPAREN body=block END
+    { 
+      if (List.length params) > 0 then
+      let pars = params in FuncDefn (name, pars, body)
+      else 
+      let pars = [] in FuncDefn (name, pars, body) 
+    }
 
 (* Top level statements *)
+import_stmt:
+  | IMPORT LIT_STRING
+    { Import $2 }
+
 top_level:
+  | import_stmt { $1 }
   | func_definition { $1 }
   | stmt { Stmt $1 }
 
@@ -130,13 +144,13 @@ program:
   | list(top_level) EOF { Program $1 }
 
 %inline bin_op:
-  | PLUS { Op_Plus }
-  | MINUS { Op_Minus }
-  | STAR { Op_Star }
-  | SLASH { Op_Slash }
-  | EQ { Op_Eq }
-  | NOT_EQ { Op_NotEq }
-  | LT { Op_Lt }
-  | GT { Op_Gt }
-  | LT_EQ { Op_LtEq }
-  | GT_EQ { Op_GtEq }
+  | PLUS { OPlus }
+  | MINUS { OMinus }
+  | STAR { OStar }
+  | SLASH { OSlash }
+  | EQ { OEq }
+  | NOT_EQ { ONe }
+  | LT { OLt }
+  | GT { OGt }
+  | LT_EQ { OLtEq }
+  | GT_EQ { OGtEq }

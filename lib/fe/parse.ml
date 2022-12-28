@@ -22,3 +22,7 @@ let parse_program lexbuf =
 let parse ch =
   let lexbuf = Lexing.from_channel ch in
   parse_program lexbuf
+
+let parse_string src =
+  let lexbuf = Lexing.from_string src in
+  parse_program lexbuf

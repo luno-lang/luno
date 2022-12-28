@@ -1,13 +1,13 @@
 (lang dune 3.6)
 
-(name tsuki)
+(name luno)
 
 (generate_opam_files true)
 
 (using menhir 2.1)
 
 (source
- (github megabytesofrem/tsuki))
+ (github megabytesofrem/luno))
 
 (authors "Abigail")
 
@@ -18,7 +18,7 @@
 (documentation https://url/to/documentation)
 
 (package
- (name tsuki)
+ (name luno)
  (synopsis "A small toy language with syntax heavily inspired by Lua.")
  (description "A small toy language with syntax heavily inspired by Lua.")
  (depends ocaml dune)

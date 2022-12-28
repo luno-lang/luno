@@ -1,5 +1,5 @@
 (library
- (name tsuki)
+ (name luno)
  (libraries fe be batteries))
 
 (env

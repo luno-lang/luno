@@ -31,6 +31,8 @@ type token =
   | VAR
   | CONST
   | END
+  | TRUE
+  | FALSE
   (* Types *)
   | ANY
   | BOOL

@@ -1,0 +1,12 @@
+# TODO: make this work with relative imports
+# import "examples/two.tsu"
+
+fn hello()
+    msg := "test"
+    print(msg)
+end
+
+# Call the function hello
+hello()
+
+# -*- vim: set ft=ruby shiftwidth=4 softtabstop=4 tabstop=4 expandtab -*-

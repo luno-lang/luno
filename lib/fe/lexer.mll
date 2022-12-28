@@ -22,7 +22,10 @@ let _ =
       ("var", VAR);
       ("const", CONST);
       ("end", END);
-      
+
+      ("true", LIT_BOOL true);
+      ("false", LIT_BOOL false);
+
       (* Types *)
       ("any", ANY);
       ("bool", BOOL);
@@ -56,7 +59,7 @@ rule lex_token = parse
   | ":"  {COLON}
   | "="  {ASSIGN}
   | "==" {EQ}
-  (* | "~=" {NOT_EQ} *)
+  | "~=" {NOT_EQ}
   | "<"  {LT}
   | ">"  {GT}
   | "<=" {LT_EQ}
@@ -64,16 +67,16 @@ rule lex_token = parse
   | "->" {ARROW}
   | '"'  {lex_string (Buffer.create 16) lexbuf}
   | "#" {lex_comment lexbuf}
-  
+
   | ident as s
-  {
-    match Hashtbl.find_option kw_table s with
-    | Some kw -> kw
-    | None -> 
-      if Hashtbl.mem reserved_kw_table s
-      then failwith "lexer: reserved keyword"
-      else IDENT s
-  }
+    {
+      match Hashtbl.find_option kw_table s with
+      | Some kw -> kw
+      | None -> 
+        if Hashtbl.mem reserved_kw_table s
+        then failwith "lexer: reserved keyword"
+        else IDENT s
+    }
   | int as i {LIT_INT (int_of_string i)}
   | whitespace {lex_token lexbuf}
   | eol {new_line lexbuf; lex_token lexbuf}

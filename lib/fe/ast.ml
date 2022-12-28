@@ -2,23 +2,23 @@ type loc = Lexing.position
 
 (* Binary operators *)
 type bin_op =
-  | Op_Plus
-  | Op_Minus
-  | Op_Star
-  | Op_Slash
-  | Op_LParen
-  | Op_RParen
-  | Op_LBrack
-  | Op_RBrack
-  | Op_Comma
-  | Op_Colon
-  | Op_Assign
-  | Op_Eq
-  | Op_NotEq
-  | Op_Lt
-  | Op_Gt
-  | Op_LtEq
-  | Op_GtEq
+  | OPlus
+  | OMinus
+  | OStar
+  | OSlash
+  | OLParen
+  | ORParen
+  | OLBrack
+  | ORBrack
+  | OComma
+  | OColon
+  | OAssign
+  | OEq
+  | ONe
+  | OLt
+  | OGt
+  | OLtEq
+  | OGtEq
 
 type ty =
   | TInt
@@ -29,6 +29,7 @@ type ty =
   | TNeedsInfer
 
 type literal =
+  | LitBool of bool
   | LitInt of int
   | LitFloat of float
   | LitStr of string
@@ -45,7 +46,7 @@ type stmt =
   | ShortVarDecl of string * expr (* x := 1 *)
   | VarDecl of ty * string * expr (* var x: int = 1 *)
   | VarAssign of string * expr (* x = 1 *)
-  | If of expr * block * block (* if cond then block else block end *)
+  | If of expr * block * block option (* if cond then block else block end *)
   | For of string * expr * block (* for x of items .. end *)
   | While of expr * block (* while cond .. end *)
   | FuncCall of expr
@@ -53,6 +54,7 @@ type stmt =
 and block = Block of stmt list
 
 type top_level =
+  | Import of string
   | FuncDefn of string * (string * ty) list * block
   | Stmt of stmt
 
@@ -101,11 +103,13 @@ module Pretty = struct
 
   and string_of_top_level (prefix : string) (indent : int) tl =
     match tl with
+    | Import path -> "import " ^ path
     | FuncDefn (name, params, block) ->
         indent_string prefix indent "func_defn\n"
         ^ indent_string "name:" (indent + 2) name
         ^ "\n"
         ^ string_of_block (indent + 2) block
+    | _ -> ""
 
   and string_of_block (indent : int) = function
     | Block bl ->
@@ -118,21 +122,21 @@ module Pretty = struct
 
   and string_of_op (bop : bin_op) =
     match bop with
-    | Op_Plus -> "+"
-    | Op_Minus -> "-"
-    | Op_Star -> "*"
-    | Op_Slash -> "/"
-    | Op_LParen -> "("
-    | Op_RParen -> ")"
-    | Op_LBrack -> "["
-    | Op_RBrack -> "]"
-    | Op_Comma -> ","
-    | Op_Colon -> ":"
-    | Op_Assign -> "="
-    | Op_Eq -> "=="
-    | Op_NotEq -> "~="
-    | Op_Lt -> "<"
-    | Op_LtEq -> "<="
-    | Op_Gt -> ">"
-    | Op_GtEq -> ">="
+    | OPlus -> "+"
+    | OMinus -> "-"
+    | OStar -> "*"
+    | OSlash -> "/"
+    | OLParen -> "("
+    | ORParen -> ")"
+    | OLBrack -> "["
+    | ORBrack -> "]"
+    | OComma -> ","
+    | OColon -> ":"
+    | OAssign -> "="
+    | OEq -> "=="
+    | ONe -> "~="
+    | OLt -> "<"
+    | OGt -> ">"
+    | OLtEq -> "<="
+    | OGtEq -> ">="
 end
