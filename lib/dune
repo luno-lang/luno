@@ -1,6 +1,6 @@
 (library
  (name luno)
- (libraries fe be batteries))
+ (libraries fe be me batteries))
 
 (env
  (dev

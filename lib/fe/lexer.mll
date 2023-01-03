@@ -11,7 +11,6 @@ let reserved_kw_table : (string, token) Hashtbl.t = Hashtbl.create 20
 let _ = 
   List.iter (fun (kw, ty) -> Hashtbl.add kw_table kw ty)
     [ ("import", IMPORT);
-      ("foreign", FOREIGN);
       ("fn", FN);
       ("if", IF);
       ("else", ELSE);
@@ -20,9 +19,9 @@ let _ =
       ("while", WHILE);
       ("then", THEN);
       ("var", VAR);
-      ("const", CONST);
+      ("let", LET);
+      ("ret", RET);
       ("end", END);
-
       ("true", LIT_BOOL true);
       ("false", LIT_BOOL false);
 
@@ -35,7 +34,7 @@ let _ =
 
 let _ = 
   List.iter (fun (kw, ty) -> Hashtbl.add reserved_kw_table kw ty)
-    [ ]
+  [ ]
 }
 
 let digit = ['0'-'9']
@@ -64,7 +63,7 @@ rule lex_token = parse
   | ">"  {GT}
   | "<=" {LT_EQ}
   | ">=" {GT_EQ}
-  | "->" {ARROW}
+  | "=>" {ARROW}
   | '"'  {lex_string (Buffer.create 16) lexbuf}
   | "#" {lex_comment lexbuf}
 
@@ -74,10 +73,11 @@ rule lex_token = parse
       | Some kw -> kw
       | None -> 
         if Hashtbl.mem reserved_kw_table s
-        then failwith "lexer: reserved keyword"
+        then failwith "lexer: reserved keyword (for the future)"
         else IDENT s
     }
   | int as i {LIT_INT (int_of_string i)}
+  (* TODO: add float *)
   | whitespace {lex_token lexbuf}
   | eol {new_line lexbuf; lex_token lexbuf}
   | eof {EOF}
@@ -95,7 +95,7 @@ and lex_string buf = parse
   (* Unterminated string *)
   | eof { raise (SyntaxError ("lexer: unterminated string literal")) }
 
-(* Note: Tsuki only supports single line comments *)
+(* Note: Luno only supports single line comments *)
 and lex_comment = parse
   | eol {new_line lexbuf; lex_token lexbuf}
   | eof {EOF}

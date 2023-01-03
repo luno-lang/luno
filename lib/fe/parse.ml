@@ -7,6 +7,12 @@ let print_err_pos lexbuf =
   let pos = lexbuf.lex_curr_p in
   Printf.sprintf "%d:%d" pos.pos_lnum (pos.pos_cnum - pos.pos_bol + 1)
 
+let position { Lexing.pos_fname; pos_lnum; pos_cnum; pos_bol } =
+  let file = pos_fname in
+  let line = pos_lnum in
+  let char = pos_cnum - pos_bol in
+  (file, line, char)
+
 let parse_program lexbuf =
   try Ok (Parser.program Lexer.lex_token lexbuf) with
   | SyntaxError msg ->

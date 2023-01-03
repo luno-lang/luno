@@ -25,6 +25,7 @@ type ty =
   | TFloat
   | TString
   | TBool
+  | TFunction of (ty list * ty)
   | TAny
   | TNeedsInfer
 
@@ -49,13 +50,15 @@ type stmt =
   | If of expr * block * block option (* if cond then block else block end *)
   | For of string * expr * block (* for x of items .. end *)
   | While of expr * block (* while cond .. end *)
-  | FuncCall of expr
+  | Return of expr
+  (* Expression embedded within a statement *)
+  | Expr of expr
 
 and block = Block of stmt list
 
 type top_level =
   | Import of string
-  | FuncDefn of string * (string * ty) list * block
+  | FuncDefn of ty * string * (string * ty) list * block
   | Stmt of stmt
 
 type program = Program of top_level list
@@ -65,9 +68,10 @@ module Pretty = struct
   let indent_string prefix n str = String.make n ' ' ^ prefix ^ str
 
   let string_of_literal = function
-    | LitInt d -> string_of_int d
-    | LitFloat f -> string_of_float f
-    | LitStr s -> "\"" ^ s ^ "\""
+    | LitBool a -> string_of_bool a
+    | LitInt a -> string_of_int a
+    | LitFloat a -> string_of_float a
+    | LitStr a -> "\"" ^ a ^ "\""
 
   let rec string_of_expr (prefix : string) (indent : int) expr =
     match expr with
@@ -99,12 +103,13 @@ module Pretty = struct
         ^ "\n"
         ^ string_of_expr "value:" (indent + 2) exp
         ^ "\n"
+    | Expr exp -> string_of_expr "" indent exp
     | _ -> ""
 
   and string_of_top_level (prefix : string) (indent : int) tl =
     match tl with
     | Import path -> "import " ^ path
-    | FuncDefn (name, params, block) ->
+    | FuncDefn (ty, name, params, block) ->
         indent_string prefix indent "func_defn\n"
         ^ indent_string "name:" (indent + 2) name
         ^ "\n"

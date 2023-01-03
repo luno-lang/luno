@@ -21,10 +21,10 @@ open Ast
 %token LT_EQ
 %token GT_EQ
 %token ARROW
+%token EOF
 
 (* Keywords *)
 %token IMPORT
-%token FOREIGN
 %token FN 
 %token IF
 %token ELSE
@@ -33,9 +33,9 @@ open Ast
 %token WHILE
 %token THEN
 %token VAR
-%token CONST
+%token LET
+%token RET
 %token END
-%token EOF
 %token TRUE
 %token FALSE
 
@@ -107,8 +107,8 @@ stmt:
     { For (name, exp, for_b) }
   | WHILE cond=expr THEN while_b=block END
     { While (cond, while_b) }
-  | func_call
-    { FuncCall $1 }
+  | expr
+    { Expr $1 }
 
 block:
   | list(stmt) { Block $1 }
@@ -122,12 +122,12 @@ func_type_param_list:
   { params }
 
 func_definition:
-  | FN name=IDENT LPAREN params=func_type_param_list RPAREN body=block END
+  | FN name=IDENT LPAREN params=func_type_param_list RPAREN ret=ty body=block END
     { 
       if (List.length params) > 0 then
-      let pars = params in FuncDefn (name, pars, body)
+      let pars = params in FuncDefn (ret, name, pars, body)
       else 
-      let pars = [] in FuncDefn (name, pars, body) 
+      let pars = [] in FuncDefn (ret, name, pars, body) 
     }
 
 (* Top level statements *)

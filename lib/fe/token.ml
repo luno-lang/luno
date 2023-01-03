@@ -29,7 +29,8 @@ type token =
   | WHILE
   | THEN
   | VAR
-  | CONST
+  | LET
+  | RET
   | END
   | TRUE
   | FALSE
@@ -79,8 +80,11 @@ let rec string_of_tok t =
   | WHILE -> "while"
   | THEN -> "then"
   | VAR -> "var"
-  | CONST -> "const"
+  | LET -> "let"
+  | RET -> "ret"
   | END -> "end"
+  | TRUE -> "true"
+  | FALSE -> "false"
   | ANY -> "any"
   | BOOL -> "bool"
   | INT -> "int"

@@ -1,12 +1,11 @@
-# TODO: make this work with relative imports
-# import "examples/two.tsu"
+## Type safety checks
 
-fn hello()
-    msg := "test"
-    print(msg)
-end
+var aString  : string = "A string (type annotated)"
+aString_ := "A string (type inferred)"
 
-# Call the function hello
-hello()
+var aInt : int = 123
+# same as above, you can infer its type
+JS_print("The value of 'aInt' is: ")
+JS_print(JS_toString(aInt))
 
 # -*- vim: set ft=ruby shiftwidth=4 softtabstop=4 tabstop=4 expandtab -*-

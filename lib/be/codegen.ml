@@ -54,7 +54,8 @@ and gen_stmt = function
       ^ gen_block block
   | While (cond, block) ->
       Printf.sprintf "\nwhile (%s)" (gen_expr cond) ^ gen_block block
-  | FuncCall call -> gen_expr call
+  | Return exp -> Printf.sprintf "\nreturn %s;" (gen_expr exp)
+  | Expr exp -> gen_expr exp
 
 and gen_block = function
   | Block stmts -> "{" ^ String.concat "\n" (List.map gen_stmt stmts) ^ "\n}"
@@ -64,9 +65,9 @@ let gen_func_params (params : (string * ty) list) =
 
 let gen_top_level = function
   | Import path -> ""
-  | FuncDefn (name, [], block) ->
+  | FuncDefn (_, name, [], block) ->
       Printf.sprintf "function %s()" name ^ gen_block block
-  | FuncDefn (name, params, block) ->
+  | FuncDefn (_, name, params, block) ->
       Printf.sprintf "function %s(%s)" name (gen_func_params params)
       ^ gen_block block
   | Stmt stmts -> gen_stmt stmts
