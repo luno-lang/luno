@@ -67,6 +67,20 @@ type program = Program of top_level list
 module Pretty = struct
   let indent_string prefix n str = String.make n ' ' ^ prefix ^ str
 
+  let rec string_of_type = function
+    | TBool -> "bool"
+    | TInt -> "int"
+    | TFloat -> "float"
+    | TString -> "string"
+    | TAny -> "<any>"
+    | TFunction (param_tys, ret_ty) ->
+        Printf.sprintf "<fn %s -> %s>"
+          (String.concat "," (List.map string_of_type param_tys))
+          (string_of_type ret_ty)
+    (* at this point, there is not enough information to infer the type
+       so it will need to be inferred later on *)
+    | TNeedsInfer -> "<needs infer>"
+
   let string_of_literal = function
     | LitBool a -> string_of_bool a
     | LitInt a -> string_of_int a

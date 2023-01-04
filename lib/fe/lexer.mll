@@ -40,7 +40,7 @@ let _ =
 let digit = ['0'-'9']
 let alpha = ['a'-'z' 'A'-'Z']
 let int = '-'? digit+
-let ident = (alpha) (alpha|digit|'_')*
+let ident = ('_'|alpha) (alpha|digit|'_')*
 
 let whitespace = [' ' '\t']+
 let eol = ['\r' '\n'] | '\r' '\n'

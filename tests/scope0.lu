@@ -1,0 +1,28 @@
+fn print(s string) any
+  _print(s)
+end
+
+## Tests to ensure that functions respect their scoping and that variables
+## cannot leak out of their scoping
+
+fn test_scope() any
+  local1 := "function local"
+  var local2 : string = "function local 2"
+
+  print("--- we are now inside 'test_scope' ---")
+  print(local1)
+  print(local2)
+  print("--- we are now leaving 'test_scope' ---")
+end
+
+print("--- we are entering the function ---")
+test_scope()
+
+print("--- we are now outside of the function ---")
+
+local1 := "program local"
+var local2 : string = "program local 2"
+
+print(local1)
+print(local2)
+# -*- vim: set ft=ruby shiftwidth=4 softtabstop=4 tabstop=4 expandtab -*-

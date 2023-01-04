@@ -1,13 +1,10 @@
 open Batteries
+open Scope
 open Fe.Ast
 
-exception NotInScope of string
 exception TypeError of string * ty
 exception TypeMismatch of string * ty * ty
 
-type context = { vars : (string, ty) Hashtbl.t }
-
-let new_context = { vars = Hashtbl.create 20 }
 let type_err why t = raise (TypeError (why, t))
 let type_mismatch why t1 t2 = raise (TypeMismatch (why, t1, t2))
 
@@ -16,82 +13,74 @@ let are_types_compatible t1 t2 =
   | _, TAny -> true
   | t1, t2 -> t1 = t2
 
-let rec string_of_type = function
-  | TBool -> "bool"
-  | TInt -> "int"
-  | TFloat -> "float"
-  | TString -> "string"
-  | TAny -> "<any>"
-  | TFunction (param_tys, ret_ty) ->
-      Printf.sprintf "<fn %s -> %s>"
-        (String.concat "," (List.map string_of_type param_tys))
-        (string_of_type ret_ty)
-  (* at this point, there is not enough information to infer the type
-     so it will need to be inferred later on *)
-  | TNeedsInfer -> "<needs infer>"
-
-let lookup_var tbl name =
-  match Hashtbl.find_option tbl name with
-  | Some ty -> ty
-  | None -> raise (NotInScope name)
-
-let check_lit _ (lit : literal) t =
+let check_lit ctx (lit : literal) t =
   match (lit, t) with
-  | LitBool _, TBool -> ()
-  | LitInt _, TInt -> ()
-  | LitFloat _, TFloat -> ()
-  | LitStr _, TString -> ()
+  | LitBool _, TBool -> ctx
+  | LitInt _, TInt -> ctx
+  | LitFloat _, TFloat -> ctx
+  | LitStr _, TString -> ctx
   | _ -> raise (TypeError ("could not check against", t))
 
 let rec check_expr ctx (exp : expr) t =
   match (exp, t) with
-  | _, TAny -> ()
+  | Ident name, _ ->
+      if Scope.has_symbol ctx name then ctx else failwith "not in scope"
+  | _, TAny -> ctx
   | Lit lit, t -> check_lit ctx lit t
   | exp, t ->
       let synth_ty = infer ctx exp in
-      if are_types_compatible t synth_ty then ()
+      if are_types_compatible t synth_ty then ctx
       else type_mismatch "types are not compatible" t synth_ty
 
 and check_stmt ctx (stmt : stmt) =
   match stmt with
   | VarAssign (name, val') ->
       let t1 = infer ctx val' in
-      let t2 = lookup_var ctx.vars name in
-      if are_types_compatible t1 t2 then Hashtbl.replace ctx.vars name t1
+      let t2 = Scope.lookup_symbol ctx name in
+      if are_types_compatible t1 t2 then ctx
       else type_mismatch "type mismatch while re-assigning" t1 t2
   | ShortVarDecl (name, val') ->
       let synth_t = infer ctx val' in
-      Hashtbl.add ctx.vars name synth_t
-  | VarDecl (t, name, _) -> Hashtbl.add ctx.vars name t
+      Scope.add_symbol ctx name synth_t
+  | VarDecl (t, name, _) -> Scope.add_symbol ctx name t
   | If (cond, _, _) ->
       let cond_t = infer ctx cond in
-      if cond_t = TBool || cond_t = TAny then ()
+      if cond_t = TBool || cond_t = TAny then ctx
       else type_err "expected boolean condition" cond_t
   | For (name, exp, _) ->
-      Hashtbl.add ctx.vars name TString;
-      let name_t = lookup_var ctx.vars name in
-      let exp_t = infer ctx exp in
-      if name_t = TString then () else type_err "expected a name" exp_t
+      let ctx' = Scope.add_symbol ctx name TString in
+      let name_t = Scope.lookup_symbol ctx' name in
+      let exp_t = infer ctx' exp in
+      if name_t = TString then ctx' else type_err "expected a name" exp_t
   | While (cond, _) ->
       let cond_t = infer ctx cond in
-      if cond_t = TBool then ()
+      if cond_t = TBool then ctx
       else type_err "expected boolean condition" cond_t
-  | Return _ -> ()
+  | Return _ -> ctx
   | Expr exp ->
       let synth_t = infer ctx exp in
       check_expr ctx exp synth_t
 
 and check_top_level ctx (tl : top_level) =
   match tl with
-  | Import path -> ()
+  | Import path -> ctx
   | FuncDefn (ret_t, name, params, (Block stmts : block)) ->
-      List.iter (fun a -> check_stmt ctx a) stmts
+      let param_tys = List.map (fun (_, a) -> a) params in
+      let ctx' =
+        List.fold_left (fun m (k, v) -> Scope.add_symbol m k v) ctx params
+      in
+      (* check the statements inside the function scope combined w/ the parameters *)
+      let _ = List.fold_left check_stmt ctx' stmts in
+
+      (* return only the outer scope, so we dont leak parameters *)
+      let scoped = Scope.add_symbol ctx name (TFunction (param_tys, ret_t)) in
+      scoped
   | Stmt stmt -> check_stmt ctx stmt
 
-and check_program ctx (Program tl) = List.iter (check_top_level ctx) tl
+and check_program ctx (Program tl) =
+  List.fold_left (fun m e -> check_top_level m e) ctx tl
 
 (* Type inference *)
-
 and infer_lit = function
   | LitBool _ -> TBool
   | LitInt _ -> TInt
@@ -99,12 +88,11 @@ and infer_lit = function
   | LitStr _ -> TString
 
 and infer_call ctx name params =
-  match lookup_var ctx.vars name with
+  match Scope.lookup_symbol ctx name with
   | TFunction (param_tys, ret_ty) ->
-      (* check the length of the params *)
       if List.length param_tys = List.length params then
         let _ =
-          List.iter
+          List.map
             (fun (a, t) -> check_expr ctx a t)
             (List.combine params param_tys)
         in
@@ -115,7 +103,7 @@ and infer_call ctx name params =
 and infer ctx (exp : expr) =
   match exp with
   | Lit lit -> infer_lit lit
-  | Ident name -> lookup_var ctx.vars name
+  | Ident name -> Scope.lookup_symbol ctx name
   | BinOp (e1, op, e2) -> (
       let t1 = infer ctx e1 in
       let t2 = infer ctx e2 in
@@ -124,8 +112,8 @@ and infer ctx (exp : expr) =
       | TString, OPlus, TString -> TString
       | _ ->
           type_err
-            (Printf.sprintf "unable to infer type for %s and %s" (string_of_type t1)
-               (string_of_type t2))
+            (Printf.sprintf "unable to infer type for %s and %s"
+               (Pretty.string_of_type t1) (Pretty.string_of_type t2))
             t1)
   | List _ -> TAny (* FIXME: fix type checking for lists *)
   | FuncCall (name, params) -> infer_call ctx name params

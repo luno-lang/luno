@@ -1,0 +1,28 @@
+fn print(s string) any
+  _print(s)
+end
+
+print("--- we are now outside of the function ---")
+GlobalVar := "global scope"
+
+## Tests to ensure that global variables are overwritten 
+print(GlobalVar)
+
+fn test_scope() any
+  # store the global var into a tmp variable to check later
+  tmp := GlobalVar
+  GlobalVar = "modified"
+
+  print("--- we are now inside 'test_scope' ---")
+  if _stringequal(tmp, GlobalVar) then
+    print("tmp == GlobalVar")
+  else
+    print("tmp ~= GlobalVar")
+  end
+  print("--- we are now leaving 'test_scope' ---")
+end
+
+test_scope()
+
+print("--- we are now outside of the function ---")
+print(GlobalVar)

@@ -114,7 +114,7 @@ block:
   | list(stmt) { Block $1 }
 
 func_type_param:
-  | name=IDENT COLON typ=ty
+  | name=IDENT typ=ty
   { (name, typ) }
 
 func_type_param_list:
