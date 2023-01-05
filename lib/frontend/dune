@@ -1,5 +1,5 @@
 (library
- (name fe)
+ (name frontend)
  (libraries batteries))
 
 (ocamllex lexer)

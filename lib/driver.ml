@@ -1,11 +1,11 @@
 open Batteries
-open Fe.Parse
+open Frontend.Parse
 
 (* The compiler pipeline *)
-module Ast = Fe.Ast
-module Scope = Me.Scope
-module Tc = Me.Typecheck
-module Cgen = Be.Codegen
+module Ast = Frontend.Ast
+module Scope = Semant.Scope
+module Tc = Semant.Typecheck
+module Cgen = Codegen.Js
 
 (* Barebones prelude that we include by default. This is a standin
    for an actual standard library. *)

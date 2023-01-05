@@ -7,9 +7,9 @@
 (using menhir 2.1)
 
 (source
- (github megabytesofrem/luno))
+ (github luno-lang/luno))
 
-(authors "Abigail")
+(authors "Luno")
 
 (maintainers "Abigail")
 

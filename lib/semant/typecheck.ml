@@ -1,6 +1,6 @@
 open Batteries
 open Scope
-open Fe.Ast
+open Frontend.Ast
 
 exception TypeError of string * ty
 exception TypeMismatch of string * ty * ty

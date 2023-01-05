@@ -3,12 +3,12 @@ opam-version: "2.0"
 synopsis: "A small toy language with syntax heavily inspired by Lua."
 description: "A small toy language with syntax heavily inspired by Lua."
 maintainer: ["Abigail"]
-authors: ["Abigail"]
+authors: ["Luno"]
 license: "MIT"
 tags: ["programming language"]
-homepage: "https://github.com/megabytesofrem/luno"
+homepage: "https://github.com/luno-lang/luno"
 doc: "https://url/to/documentation"
-bug-reports: "https://github.com/megabytesofrem/luno/issues"
+bug-reports: "https://github.com/luno-lang/luno/issues"
 depends: [
   "ocaml"
   "dune" {>= "3.6"}
@@ -28,4 +28,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "git+https://github.com/megabytesofrem/luno.git"
+dev-repo: "git+https://github.com/luno-lang/luno.git"

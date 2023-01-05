@@ -1,4 +1,4 @@
 (executable
  (public_name luno)
  (name main)
- (libraries luno fe be me))
+ (libraries luno frontend semant codegen))

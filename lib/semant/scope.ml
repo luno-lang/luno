@@ -1,5 +1,5 @@
 open Batteries
-open Fe.Ast
+open Frontend.Ast
 
 exception NotInScope of string
 
