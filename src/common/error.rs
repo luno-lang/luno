@@ -1,12 +1,12 @@
 use ariadne::{Report, ReportKind};
 use thiserror::Error;
 
-use super::lexer::{Token, TokenKind};
+use crate::frontend::lexer::{Token, TokenKind};
 
 #[derive(Debug, PartialEq, Error)]
 pub enum ParseError {
-    #[error("expected {expected:?}, but got {:?}", token.kind)]
-    UnexpectedToken { token: Token, expected: TokenKind },
+    #[error("expected {expected:?}, but got {:?}", got.kind)]
+    UnexpectedToken { got: Token, expected: Vec<TokenKind> },
 
     #[error("reached EOF")]
     ReachedEof,

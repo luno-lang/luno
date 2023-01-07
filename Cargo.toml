@@ -7,5 +7,6 @@ edition = "2021"
 
 [dependencies]
 ariadne = "0.1.5"
+im = "15.1.0"
 logos = "0.12.1"
 thiserror = "1.0.24"

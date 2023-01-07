@@ -1,3 +1,4 @@
+mod common;
 mod frontend;
 
 fn main() {
