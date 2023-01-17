@@ -1,0 +1,12 @@
+[package]
+name = "luno"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ariadne = "0.1.5"
+im = "15.1.0"
+logos = "0.12.1"
+thiserror = "1.0.24"

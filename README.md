@@ -15,5 +15,5 @@ square(6) // 6*6 = 36
 ## Building
 The bootstrap compiler is written in Rust.
 ```
-cargo run
+cargo run luno
 ```
