@@ -36,6 +36,12 @@ pub enum TokenKind {
     GtEq,
     #[token("=>")]
     FatArrow,
+    #[token(".")]
+    Dot,
+    #[token(",")]
+    Comma,
+    #[token(":")]
+    Colon,
 
     // Keywords
     #[token("import")]
@@ -44,8 +50,12 @@ pub enum TokenKind {
     If,
     #[token("else")]
     Else,
+    #[token("fn")]
+    Fn,
     #[token("for")]
     For,
+    #[token("do")]
+    Do,
     #[token("of")]
     Of,
     #[token("while")]
@@ -70,16 +80,16 @@ pub enum TokenKind {
     #[error]
     #[regex(r"[ \t\n\f]+", logos::skip)]
     Error,
+
+    EOF,
 }
+
+pub type Location = std::ops::Range<usize>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     pub kind: TokenKind,
-    pub location: std::ops::Range<usize>,
-
-    // Use String so we don't have to have a lifetime everywhere we use
-    // Token
-    pub literal: String,
+    pub location: Location,
 }
 
 /// Return an iterator over the tokens in the lexer
@@ -89,11 +99,6 @@ pub fn lex_tokens<'a>(src: &'a str) -> impl Iterator<Item = Token> + 'a {
         .map(|(k, s)| Token {
             kind: k,
             location: s.clone(),
-            literal: src[s].to_string(),
         })
         .into_iter()
 }
-
-// Tests
-#[cfg(test)]
-mod tests {}
