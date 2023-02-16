@@ -1,17 +1,5 @@
 use super::lexer::TokenKind;
-
-#[derive(Debug, Clone)]
-pub enum Type {
-    IntTy,
-    FloatTy,
-    StringTy,
-    BoolTy,
-    FunctionTy(Vec<Type>, Box<Type>),
-    AnyTy,
-
-    // The type is unknown/has not been inferred yet
-    UnknownTy,
-}
+use crate::pass::types::Type;
 
 #[derive(Debug, Clone)]
 pub enum Expr {
@@ -21,7 +9,7 @@ pub enum Expr {
     String(String),
 
     Array(Vec<Expr>),
-    BinOp(Box<Expr>, TokenKind, Box<Expr>),
+    BinOp(TokenKind, Box<Expr>, Box<Expr>),
     Ident(String),
     Call(String, Vec<Expr>),
     List(Vec<Expr>),
@@ -46,6 +34,11 @@ pub enum Stmt {
     VarAssign {
         ident: String,
         value: Expr,
+    },
+    If {
+        cond: Expr,
+        then_block: Vec<Stmt>,
+        else_block: Option<Vec<Stmt>>,
     },
     Expr {
         inner: Expr,

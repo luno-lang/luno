@@ -1,16 +1,17 @@
 use std::iter::Peekable;
 
 use super::{
-    ast::{Expr, Program, Stmt, Type},
+    ast::{Expr, Program, Stmt},
     lexer::{lex_tokens, Location, Token, TokenKind},
 };
 
-use crate::common::error::ParseError;
+use crate::common::error::Error;
+use crate::pass::types::Type;
 
 /// Type which wraps our lexer iterator inside a `Peekable`
 type PeekableLexer<'a> = Peekable<Box<dyn Iterator<Item = Token> + 'a>>;
 
-type ParseResult<T> = Result<T, ParseError>;
+type ParseResult<T> = Result<T, Error>;
 
 pub struct Parser<'a> {
     src: &'a str,
@@ -23,7 +24,6 @@ pub struct Parser<'a> {
     pub lexer: PeekableLexer<'a>,
 }
 
-/// Implement basic functionality for the parsers later on
 #[allow(dead_code)]
 impl<'a> Parser<'a> {
     /// Create a new parser from the given source
@@ -58,7 +58,7 @@ impl<'a> Parser<'a> {
             self.location = token.clone().location;
             Ok(token)
         } else {
-            Err(ParseError::UnexpectedToken {
+            Err(Error::UnexpectedToken {
                 location: token.clone().location,
                 got: token,
                 expected: vec![token_kind],
@@ -73,7 +73,7 @@ impl<'a> Parser<'a> {
             self.location = token.clone().location;
             Ok(token)
         } else {
-            Err(ParseError::UnexpectedToken {
+            Err(Error::UnexpectedToken {
                 location: token.clone().location,
                 got: token,
                 expected: tokens.to_vec(),
@@ -117,9 +117,8 @@ impl<'a> Parser<'a> {
             TokenKind::LSquare => self.parse_array(),
             TokenKind::Ident => {
                 self.next();
-                let peek = self.peek();
-                println!("next {:?}", peek);
-                return match peek.kind {
+                let next_token = self.peek();
+                return match next_token.kind {
                     TokenKind::LParen => {
                         let call = self.parse_call(literal.to_string());
                         self.next();
@@ -128,7 +127,7 @@ impl<'a> Parser<'a> {
                     _ => Ok(Expr::Ident(literal.to_string())),
                 };
             }
-            _ => Err(ParseError::UnexpectedToken {
+            _ => Err(Error::UnexpectedToken {
                 location: token.location.clone(),
                 got: token,
                 expected: value_token,
@@ -140,7 +139,7 @@ impl<'a> Parser<'a> {
         let mut left = self.parse_value()?;
         while let Ok(op) = self.eat(&[TokenKind::Star, TokenKind::Slash]) {
             let right = self.parse_value()?;
-            left = Expr::BinOp(Box::new(left), op.kind, Box::new(right));
+            left = Expr::BinOp(op.kind, Box::new(left), Box::new(right));
         }
 
         Ok(left)
@@ -150,7 +149,7 @@ impl<'a> Parser<'a> {
         let mut left = self.parse_factor()?;
         while let Ok(op) = self.eat(&[TokenKind::Plus, TokenKind::Minus]) {
             let right = self.parse_term()?;
-            left = Expr::BinOp(Box::new(left), op.kind, Box::new(right));
+            left = Expr::BinOp(op.kind, Box::new(left), Box::new(right));
         }
 
         Ok(left)
@@ -168,7 +167,7 @@ impl<'a> Parser<'a> {
         ];
         while let Ok(op) = self.eat(ops) {
             let right = self.parse_term()?;
-            left = Expr::BinOp(Box::new(left), op.kind, Box::new(right));
+            left = Expr::BinOp(op.kind, Box::new(left), Box::new(right));
         }
 
         Ok(left)
@@ -222,7 +221,7 @@ impl<'a> Parser<'a> {
             "any" => Ok(Type::AnyTy),
 
             // Invalid type
-            ty => Err(ParseError::InvalidType {
+            ty => Err(Error::InvalidTypeSpecified {
                 location: self.location.clone(),
                 got: ty.to_string(),
             }),
@@ -266,7 +265,7 @@ impl<'a> Parser<'a> {
                 // we push it to the list of program imports
                 Ok(import)
             }
-            _ => Err(ParseError::MalformedImport {
+            _ => Err(Error::MalformedImport {
                 location: self.location.clone(),
             }),
         }
@@ -298,7 +297,7 @@ impl<'a> Parser<'a> {
             }
 
             // We expected to see a ':' or '=' but we saw neither
-            other => Err(ParseError::ExpectedType {
+            other => Err(Error::ExpectedType {
                 location: self.location.clone(),
                 got: other.clone(),
             }),
@@ -347,7 +346,6 @@ impl<'a> Parser<'a> {
 
         // Return type
         self.next();
-        self.expect(TokenKind::FatArrow)?;
         let ret_typ = self.parse_type_name()?;
 
         stmts = self.parse_block()?;
@@ -383,62 +381,5 @@ impl<'a> Parser<'a> {
             imports: self.imports.clone(),
             stmts,
         })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Parser;
-
-    #[test]
-    fn test_expr() {
-        let mut parser = Parser::new("1 + a(1) * 2");
-        let tokens = parser.parse_expr().unwrap();
-
-        println!("{:?}", tokens);
-    }
-
-    #[test]
-    fn test_var_declare() {
-        let mut parser = Parser::new("var x : int = 5");
-        let mut tokens = parser.parse_var_declare().unwrap();
-        println!("{:?}", tokens);
-
-        // Now with type inference
-        parser = Parser::new("var x = 5");
-        tokens = parser.parse_var_declare().unwrap();
-
-        println!("{:?}", tokens);
-    }
-
-    #[test]
-    fn test_func_declare() {
-        let mut parser = Parser::new(
-            r#"
-fn sum(a:int, b:int) => int
-   var one: int = 1
-end
-"#,
-        );
-        let tokens = parser.parse_func_declare().unwrap();
-
-        println!("{:?}", tokens);
-    }
-
-    #[test]
-    fn test_program() {
-        let mut parser = Parser::new(
-            r#"
-import "test"
-
-var one: int = 1
-fn test() do
-    var one: int = 1
-end
-"#,
-        );
-        let tokens = parser.parse_program().unwrap();
-
-        println!("{:?}", tokens);
     }
 }

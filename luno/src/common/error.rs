@@ -1,33 +1,49 @@
-use ariadne::{Report, ReportKind};
+use ariadne::Report;
 use thiserror::Error;
 
-use crate::frontend::lexer::{Location, Token, TokenKind};
+use crate::{
+    frontend::lexer::{Location, Token, TokenKind},
+    pass::types::Type,
+};
 
 #[derive(Debug, PartialEq, Error)]
-pub enum ParseError {
-    #[error("expected {expected:?}, but got {:?}", got.kind)]
+pub enum Error {
+    #[error("Expected {expected:?}, but got {:?}", got.kind)]
     UnexpectedToken {
         location: Location,
         got: Token,
         expected: Vec<TokenKind>,
     },
 
-    #[error("invalid type specified")]
-    InvalidType { location: Location, got: String },
+    #[error("Invalid type specified")]
+    InvalidTypeSpecified { location: Location, got: String },
 
-    #[error("malformed import statement")]
+    #[error("Malformed import statement")]
     MalformedImport { location: Location },
 
-    #[error("expected a type, but got {:?}", got)]
+    #[error("Expected a type, but got {:?}", got)]
     ExpectedType { location: Location, got: TokenKind },
 
-    #[error("reached EOF")]
+    #[error("Reached EOF")]
     ReachedEof,
+
+    // Type checker errors
+    #[error("Type mismatch between {a:?} and {b:?}")]
+    TypeMismatch { a: Type, b: Type },
+
+    #[error("Type {a:?} and {b:?} are not compatible")]
+    IncompatibleTypes { a: Type, b: Type },
+
+    #[error("Expected boolean condition")]
+    ExpectedBoolCondition,
+
+    #[error("{name} not in scope")]
+    NotInScope { name: String },
 }
 
 // TODO: Have a function which constructs a pretty diagnostic message
 // given a parse error
-impl ParseError {
+impl Error {
     pub fn produce_report(&self) -> Report {
         // match self {
         //     ParseError::ReachedEof => {}

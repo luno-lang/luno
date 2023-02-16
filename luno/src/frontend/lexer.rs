@@ -1,5 +1,3 @@
-use std::iter::Peekable;
-
 use logos::Logos;
 
 #[derive(Debug, Clone, PartialEq, Logos)]
